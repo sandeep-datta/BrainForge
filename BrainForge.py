@@ -10,6 +10,7 @@ from PyQt4.QtCore import *
 from os import path
 
 from PythonEditor import PythonEditor
+from PyTabWidget import *
 
 
 class BrainForge(QMainWindow):
@@ -46,8 +47,10 @@ class BrainForge(QMainWindow):
 		this.statusBar()#.showMessage("Ready.")
 
 		this.setupMenu()
-		this._tabWidget = QTabWidget()
-		this._tabWidget.setTabsClosable(True)
+		#this._tabWidget = QTabWidget()
+
+		this._tabWidget = PyTabWidget()
+		this._tabWidget.TabWidget.setTabsClosable(True)
 		this.setCentralWidget(this._tabWidget)
 
 		this.setWindowTitle(this.Title)
@@ -112,21 +115,23 @@ class BrainForge(QMainWindow):
 		action.triggered.connect(handler)
 		return action
 	
-	def saveContents(this, editor):
+	def saveContents(this, tab):
+		editor = tab.Widget
 		if editor and editor.isModified():
 			if not editor._isNewFile:
 				with open(editor._fileName, "w") as f:
 					f.write(editor.text()) 
 			else:
 				fname = QFileDialog.getOpenFileName(this, "Save file")
-				with open(fname, "w") as f:
-					f.write(editor.text())
-				this.openFiles[fname] = editor
-				del this.newFiles[editor._fileName]
-				editor._fileName = fname
-				editor._isNewFile = False
-				# index = this._tabWidget
-				# this._tabWidget.setTabText(index, path.basename(fname))
+				if fname:
+					with open(fname, "w") as f:
+						f.write(editor.text())
+					this.openFiles[fname] = editor
+					del this.newFiles[editor._fileName]
+					editor._fileName = fname
+					editor._isNewFile = False
+					# index = this._tabWidget
+					# this._tabWidget.setTabText(index, path.basename(fname))
 
 
 	def onOpenFile(this):
@@ -140,14 +145,6 @@ class BrainForge(QMainWindow):
 		if fname:
 			with open(fname) as f:
 				if not fname in this.openFiles:
-					# editor = PythonEditor()
-					# editor.setText(f.read())
-					# editor.setModified(False)
-					# editor._fileName = fname #tack the file name onto the editor for future use
-					# editor._newFile = False
-					# this.openFiles[fname] = editor
-					# this._tabWidget.addTab(editor, path.basename(fname))
-
 					this.addTab(fname, False)
 				else:
 					editor = this.openFiles[fname]
@@ -169,15 +166,15 @@ class BrainForge(QMainWindow):
 		this._tabWidget.addTab(editor, path.basename(fname))
 	
 	def onCloseFile(this):
-		editor = this._tabWidget.currentWidget()
-		this.saveContents(editor)
-		this._tabWidget.removeTab(this._tabWidget.currentIndex())
-		del this.openFiles[editor._fileName]
+		tab = this._tabWidget.currentTab
+		this.saveContents(tab)
+		this._tabWidget.removeTab(tab)
+		del this.openFiles[tab._fileName]
 
 
 	def onSaveFile(this):
-		editor = this._tabWidget.currentWidget()
-		this.saveContents(editor)
+		tab = this._tabWidget.currentTab
+		this.saveContents(tab)
 
 	def onNewFile(this):
 		fname = "New file" + str(this.nextNewFileIndex)
